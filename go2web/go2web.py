@@ -9,7 +9,7 @@ def main():
         print_help()
         return
 
-    if sys.argv[1] == "-u":
+    elif sys.argv[1] == "-u":
         if len(sys.argv) < 3:
             print("Error: URL not provided")
             return
@@ -18,7 +18,7 @@ def main():
         strip_html_content = strip_html(body)
         print(strip_html_content)
 
-    if sys.argv[1] == "-s":
+    elif sys.argv[1] == "-s":
         if len(sys.argv) < 3:
             print("Error: Search term not provided")
             return
@@ -26,7 +26,7 @@ def main():
         print(f"Searching for: {search_term}")
         # TODO Implement web search logic here
 
-    if sys.argv[1] not in ["-u", "-s", "-h"]:
+    else:
         print("Error: Invalid option")
         print_help()
 

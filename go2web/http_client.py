@@ -67,7 +67,6 @@ def redirect(headers):
 def http_get(url, max_redirects=5):
     if max_redirects == 0:
         raise ValueError("Error: too many redirects")
-        return None, None, None
 
     host, path, use_ssl = parse_url(url)
 
