@@ -3,24 +3,25 @@ import os
 import time
 
 CACHE_FILE = "go2web_cache.json"
-CACHE_TTL = 300
+CACHE_TTL = 300 
+
 
 def load_cache():
     if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r") as f:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
+
 def save_cache(cache):
-    with open(CACHE_FILE, "w") as f:
-        json.dump(cache, f, indent=2)
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2, ensure_ascii=False)
+
 
 def get_cache_entry(url):
     cache = load_cache()
-    if url in cache:
-        entry = cache[url]
-        return entry
-    return None
+    return cache.get(url)
+
 
 def get_from_cache(url):
     entry = get_cache_entry(url)
@@ -30,6 +31,7 @@ def get_from_cache(url):
             print(f"Serving from cache ({int(CACHE_TTL - age)}s remaining)")
             return entry["status_line"], entry["headers"], entry["body"]
     return None
+
 
 def get_conditional_headers(url):
     entry = get_cache_entry(url)
@@ -43,8 +45,10 @@ def get_conditional_headers(url):
         headers += f"If-Modified-Since: {entry['last_modified']}\r\n"
     return headers
 
+
 def store_in_cache(url, status_line, headers, body):
     cache = load_cache()
+
     entry = {
         "status_line": status_line,
         "headers": headers,
@@ -55,9 +59,13 @@ def store_in_cache(url, status_line, headers, body):
     for header in headers:
         lower = header.lower()
         if lower.startswith("etag:"):
-            entry["etag"] = header.split(": ", 1)[1].strip()
+            parts = header.split(": ", 1)
+            if len(parts) > 1:
+                entry["etag"] = parts[1].strip()
         elif lower.startswith("last-modified:"):
-            entry["last_modified"] = header.split(": ", 1)[1].strip()
+            parts = header.split(": ", 1)
+            if len(parts) > 1:
+                entry["last_modified"] = parts[1].strip()
 
     cache[url] = entry
     save_cache(cache)
