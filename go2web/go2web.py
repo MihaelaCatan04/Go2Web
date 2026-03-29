@@ -3,6 +3,7 @@ import sys
 from help_menu import print_help
 from http_client import http_get
 from html_parser import strip_html
+from search import search
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "-h":
@@ -24,7 +25,11 @@ def main():
             return
         search_term = " ".join(sys.argv[2:])
         print(f"Searching for: {search_term}")
-        # TODO Implement web search logic here
+        results = search(search_term)
+        if results:
+            print("\nTop 10 Search Results:")
+            for i, (title, href) in enumerate(results, start=1):
+                print(f"{i}. {title}\n   {href}")
 
     else:
         print("Error: Invalid option")
