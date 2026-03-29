@@ -3,7 +3,6 @@ import sys
 from help_menu import print_help
 from http_client import http_get
 from html_parser import strip_html
-from url_parser import parse_url
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "-h":
@@ -15,8 +14,12 @@ def main():
             print("Error: URL not provided")
             return
         url = sys.argv[2]
-        print(f"Fetching URL: {url}")
-        # TODO Implement URL fetching logic here
+        status_line, headers, body = http_get(url)
+        if not status_line.startswith("HTTP/1.1 200"):
+            print(f"Error: Failed to fetch URL. Status: {status_line}")
+            return
+        strip_html_content = strip_html(body)
+        print(strip_html_content)
 
     if sys.argv[1] == "-s":
         if len(sys.argv) < 3:
