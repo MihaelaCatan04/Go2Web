@@ -1,5 +1,6 @@
-from http_client import http_get
 from bs4 import BeautifulSoup
+
+from http_client import http_get
 
 URL_TEMPLATE = "https://search.brave.com/search?q={query}"
 
@@ -11,6 +12,7 @@ def return_results(body):
     for item in soup.find_all("div", class_="snippet"):
         link_tag = item.find("a")
         title_tag = item.find("div", class_="title")
+
         if not link_tag or not title_tag:
             continue
 
@@ -19,6 +21,7 @@ def return_results(body):
 
         if title and href.startswith("http"):
             results.append((title, href))
+
         if len(results) >= 10:
             break
 
@@ -30,6 +33,4 @@ def search(search_term):
     url = URL_TEMPLATE.format(query=query)
 
     status_line, headers, body = http_get(url)
-
-    results = return_results(body)
-    return results
+    return return_results(body)

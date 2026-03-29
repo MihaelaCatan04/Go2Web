@@ -35,23 +35,28 @@ def extract_chunk(raw, crlf_pos, chunk_size):
     chunk_start = crlf_pos + 2
     chunk_end = chunk_start + chunk_size
     chunk_data = raw[chunk_start:chunk_end]
-    
     remaining = raw[chunk_end + 2:]
-    return chunk_data
+    return chunk_data, remaining
 
 
 def decode_chunked(body):
     decoded = b""
-    raw = body.encode("utf-8", errors="replace")
-    
+
+    if isinstance(body, str):
+        raw = body.encode("utf-8", errors="replace")
+    else:
+        raw = body
+
     while raw:
         chunk_size, crlf_pos = find_chunk_size(raw)
-        if chunk_size is None or chunk_size == 0:
+        if chunk_size is None:
             break
-        
-        chunk_data = extract_chunk(raw, crlf_pos, chunk_size)
+        if chunk_size == 0:
+            break
+
+        chunk_data, raw = extract_chunk(raw, crlf_pos, chunk_size)
         decoded += chunk_data
-    
+
     return decoded.decode("utf-8", errors="replace")
 
 def is_chunked(headers):
@@ -86,6 +91,7 @@ def parse_url(url):
 
 def get_socket(host, use_ssl):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(10)
     if use_ssl:
         context = ssl.create_default_context()
         sock = context.wrap_socket(sock, server_hostname=host)
@@ -155,13 +161,11 @@ def http_get(url, max_redirects=5):
             store_in_cache(url, entry["status_line"], entry["headers"], entry["body"])
             return entry["status_line"], entry["headers"], entry["body"]
 
-    # if status_code < 200 or status_code >= 300:
-    #     raise ValueError(f"Error: HTTP request failed with status code {status_code}")
-    # print(body)
     if is_chunked(headers[1:]):
         body = decode_chunked(body)
-
-    store_in_cache(url, status_line, headers[1:], body)
+    
+    if 200 <= status_code < 300:
+        store_in_cache(url, status_line, headers[1:], body)
 
 
     return status_line, headers[1:], body
