@@ -35,23 +35,28 @@ def extract_chunk(raw, crlf_pos, chunk_size):
     chunk_start = crlf_pos + 2
     chunk_end = chunk_start + chunk_size
     chunk_data = raw[chunk_start:chunk_end]
-    
     remaining = raw[chunk_end + 2:]
-    return chunk_data
+    return chunk_data, remaining
 
 
 def decode_chunked(body):
     decoded = b""
-    raw = body.encode("utf-8", errors="replace")
-    
+
+    if isinstance(body, str):
+        raw = body.encode("utf-8", errors="replace")
+    else:
+        raw = body
+
     while raw:
         chunk_size, crlf_pos = find_chunk_size(raw)
-        if chunk_size is None or chunk_size == 0:
+        if chunk_size is None:
             break
-        
-        chunk_data = extract_chunk(raw, crlf_pos, chunk_size)
+        if chunk_size == 0:
+            break
+
+        chunk_data, raw = extract_chunk(raw, crlf_pos, chunk_size)
         decoded += chunk_data
-    
+
     return decoded.decode("utf-8", errors="replace")
 
 def is_chunked(headers):
