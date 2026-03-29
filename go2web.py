@@ -16,4 +16,12 @@ while True:
     response += data
 
 socket.close()
-print(response.decode())
+
+response_text = response.decode()
+
+header, body = response_text.split("\r\n\r\n", 1)
+
+print("Headers:")
+print(header)
+print("Body:")
+print(body)
