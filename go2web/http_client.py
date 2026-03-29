@@ -14,6 +14,52 @@ GET_REQUEST_TEMPLATE = (
     "\r\n"
 )
 
+def find_chunk_size(raw):
+    crlf_pos = raw.find(b"\r\n")
+    if crlf_pos == -1:
+        return None, None
+    
+    size_str = raw[:crlf_pos].decode().strip()
+    if ";" in size_str:
+        size_str = size_str.split(";")[0]
+    
+    try:
+        chunk_size = int(size_str, 16)
+    except ValueError:
+        return None, None
+    
+    return chunk_size, crlf_pos
+
+
+def extract_chunk(raw, crlf_pos, chunk_size):
+    chunk_start = crlf_pos + 2
+    chunk_end = chunk_start + chunk_size
+    chunk_data = raw[chunk_start:chunk_end]
+    
+    remaining = raw[chunk_end + 2:]
+    return chunk_data
+
+
+def decode_chunked(body):
+    decoded = b""
+    raw = body.encode("utf-8", errors="replace")
+    
+    while raw:
+        chunk_size, crlf_pos = find_chunk_size(raw)
+        if chunk_size is None or chunk_size == 0:
+            break
+        
+        chunk_data = extract_chunk(raw, crlf_pos, chunk_size)
+        decoded += chunk_data
+    
+    return decoded.decode("utf-8", errors="replace")
+
+def is_chunked(headers):
+    for header in headers:
+        if header.lower().startswith("transfer-encoding:") and "chunked" in header.lower():
+            return True
+    return False
+
 def get_url_and_ssl(url):
     if url.startswith("http://"):
         return url[7:], False
@@ -112,6 +158,9 @@ def http_get(url, max_redirects=5):
     # if status_code < 200 or status_code >= 300:
     #     raise ValueError(f"Error: HTTP request failed with status code {status_code}")
     # print(body)
+    if is_chunked(headers[1:]):
+        body = decode_chunked(body)
+
     store_in_cache(url, status_line, headers[1:], body)
 
 
