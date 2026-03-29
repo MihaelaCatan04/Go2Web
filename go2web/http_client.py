@@ -1,5 +1,7 @@
 import socket
 import ssl
+from cache import get_from_cache, get_conditional_headers, store_in_cache, get_cache_entry
+import time
 
 GET_REQUEST_TEMPLATE = (
     "GET {path} HTTP/1.1\r\n"
@@ -54,10 +56,12 @@ def get_data(sock):
         response += chunk
     return response.decode("utf-8", errors="replace")
 
-def send_http_request(host, path, use_ssl=False):
+def send_http_request(host, path, use_ssl=False, extra_headers=""):
     sock = get_socket(host, use_ssl)
 
     request = GET_REQUEST_TEMPLATE.format(path=path, host=host)
+    if extra_headers:
+        request = request[:-2] + extra_headers + "\r\n"
     sock.sendall(request.encode())
     response = get_data(sock)
 
@@ -73,12 +77,18 @@ def redirect(headers):
     return None
 
 def http_get(url, max_redirects=5):
+    cached = get_from_cache(url)
+    if cached:
+        return cached
+
     if max_redirects == 0:
         raise ValueError("Error: too many redirects")
 
     host, path, use_ssl = parse_url(url)
 
-    response_text = send_http_request(host, path, use_ssl)
+    extra_headers = get_conditional_headers(url)
+
+    response_text = send_http_request(host, path, use_ssl, extra_headers)
 
     header_part, body = response_text.split("\r\n\r\n", 1)
     headers = header_part.split("\r\n")
@@ -90,9 +100,18 @@ def http_get(url, max_redirects=5):
         if new_url:
             return http_get(new_url, max_redirects - 1)
 
+    if status_code == 304:
+        entry = get_cache_entry(url)
+        if entry:
+            print("Server confirmed content unchanged (304)")
+            entry["timestamp"] = time.time()
+            store_in_cache(url, entry["status_line"], entry["headers"], entry["body"])
+            return entry["status_line"], entry["headers"], entry["body"]
+
     # if status_code < 200 or status_code >= 300:
     #     raise ValueError(f"Error: HTTP request failed with status code {status_code}")
     # print(body)
+    store_in_cache(url, status_line, headers[1:], body)
 
 
     return status_line, headers[1:], body
