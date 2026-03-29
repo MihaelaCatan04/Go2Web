@@ -15,9 +15,6 @@ def main():
             return
         url = sys.argv[2]
         status_line, headers, body = http_get(url)
-        if not status_line.startswith("HTTP/1.1 200"):
-            print(f"Error: Failed to fetch URL. Status: {status_line}")
-            return
         strip_html_content = strip_html(body)
         print(strip_html_content)
 
