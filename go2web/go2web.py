@@ -1,37 +1,9 @@
 import socket
 import sys
-
-socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-socket.connect(("example.com", 80))
-
-request = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"
-
-socket.sendall(request.encode())
-
-response = b""
-while True:
-    data = socket.recv(1024)
-    if not data:
-        break
-    response += data
-
-socket.close()
-
-response_text = response.decode()
-
-header, body = response_text.split("\r\n\r\n", 1)
-
-print("Headers:")
-print(header)
-print("Body:")
-print(body)
-
-def print_help():
-    print("Usage: python go2web.py")
-    print("go2web -u <URL>         -> fetch a URL")
-    print("go2web -s <search-term> -> search the web")
-    print("go2web -h               -> show this help")
+from help_menu import print_help
+from http_client import http_get
+from html_parser import strip_html
+from url_parser import parse_url
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "-h":
