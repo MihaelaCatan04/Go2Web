@@ -5,6 +5,7 @@ from http_client import http_get
 from html_parser import strip_html
 from search import search
 from content_handler import format_response
+import socket
 
 def format_results(results):
     print("\nTop 10 Search Results:")
@@ -42,17 +43,27 @@ def s(arg):
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] == "-h":
-        print_help()
-        return
-
-    elif sys.argv[1] == "-u":
-        u(sys.argv)
-    elif sys.argv[1] == "-s":
-        s(sys.argv)
-    else:
-        print("Error: Invalid option")
-        print_help()
+    try:
+        if len(sys.argv) < 2 or sys.argv[1] == "-h":
+            print_help()
+            return
+        elif sys.argv[1] == "-u":
+            u(sys.argv)
+        elif sys.argv[1] == "-s":
+            s(sys.argv)
+        else:
+            print("Error: Invalid option")
+            print_help()
+    except ValueError as e:
+        print(f"Error: {e}")
+    except ConnectionRefusedError:
+        print("Error: connection refused. Is the server running?")
+    except socket.gaierror:
+        print("Error: could not resolve hostname. Check the URL.")
+    except socket.timeout:
+        print("Error: connection timed out.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()

@@ -91,6 +91,7 @@ def parse_url(url):
 
 def get_socket(host, use_ssl):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(10)
     if use_ssl:
         context = ssl.create_default_context()
         sock = context.wrap_socket(sock, server_hostname=host)
@@ -160,13 +161,11 @@ def http_get(url, max_redirects=5):
             store_in_cache(url, entry["status_line"], entry["headers"], entry["body"])
             return entry["status_line"], entry["headers"], entry["body"]
 
-    # if status_code < 200 or status_code >= 300:
-    #     raise ValueError(f"Error: HTTP request failed with status code {status_code}")
-    # print(body)
     if is_chunked(headers[1:]):
         body = decode_chunked(body)
-
-    store_in_cache(url, status_line, headers[1:], body)
+    
+    if 200 <= status_code < 300:
+        store_in_cache(url, status_line, headers[1:], body)
 
 
     return status_line, headers[1:], body
