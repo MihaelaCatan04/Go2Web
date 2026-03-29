@@ -4,6 +4,7 @@ from help_menu import print_help
 from http_client import http_get
 from html_parser import strip_html
 from search import search
+from content_handler import format_response
 
 def format_results(results):
     print("\nTop 10 Search Results:")
@@ -16,7 +17,7 @@ def select_result(results):
         selected_title, selected_url = results[int(choice) - 1]
         print(f"\nFetching: {selected_url}\n")
         status_line, headers, body = http_get(selected_url)
-        print(strip_html(body))
+        print(format_response(headers, body))
     elif choice:
         print("Invalid choice")
 
@@ -26,7 +27,7 @@ def u(arg):
     url = arg[2]
     status_line, headers, body = http_get(url)
     strip_html_content = strip_html(body)
-    print(strip_html_content)
+    print(format_response(headers, body))
 
 def s(arg):
     if len(arg) < 3:
